@@ -1,0 +1,16 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f4f6f9; /* El color de fondo de tu sistema */
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  max-width: none; /* 🔥 AQUÍ ROMPEMOS EL CANDADO */
+  text-align: left;
+}
