@@ -13,7 +13,7 @@ function createWindow () {
   });
 
   // 🚀 AQUÍ ESTÁ LA MAGIA: Carga la app directo de la nube para que se actualice sola
-  win.loadURL('https://ventaspro.onrender.com');
+  win.loadURL('https://punto-de-venta-wjqo.onrender.com');
 }
 
 app.whenReady().then(createWindow);

@@ -669,17 +669,6 @@ function App() {
 
         <button onClick={() => setPantalla('tickets')} style={{ padding: '10px 20px', backgroundColor: pantalla === 'tickets' ? '#E91E63' : '#e0e0e0', color: pantalla === 'tickets' ? 'white' : '#333', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}>🧾 Tickets</button>
         <button onClick={() => setPantalla('corte')} style={{ padding: '10px 20px', backgroundColor: pantalla === 'corte' ? '#FF9800' : '#e0e0e0', color: pantalla === 'corte' ? 'white' : '#333', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}>📊 Corte de Caja</button>
-
-        {/* MÓDULO VIP DE RECARGAS */}
-        {modulosActivos.includes('recargas') ? (
-          <button onClick={() => setPantalla('recargas')} style={{ padding: '10px 20px', backgroundColor: pantalla === 'recargas' ? '#009688' : '#e0e0e0', color: pantalla === 'recargas' ? 'white' : '#333', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', marginLeft: 'auto' }}>
-            📱 Recargas
-          </button>
-        ) : (
-          <button onClick={() => mostrarNotificacion("🔒 ¡Este es un módulo Premium!\nContacta al Desarrollador para desbloquear las Recargas Telefónicas en tu sistema.", "error")} style={{ padding: '10px 20px', backgroundColor: '#e0e0e0', color: '#999', border: '1px dashed #ccc', borderRadius: '5px', cursor: 'not-allowed', fontSize: '18px', fontWeight: 'bold', marginLeft: 'auto' }}>
-            🔒 Recargas
-          </button>
-        )}
       </div>
 
       {cantidadStockBajo > 0 && (
@@ -693,32 +682,6 @@ function App() {
               </span>
             ))}
             .
-          </div>
-        </div>
-      )}
-
-      {/* 📱 PANTALLA: MÓDULO DE RECARGAS (VIP) */}
-      {pantalla === 'recargas' && (
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div style={{ backgroundColor: '#ffffff', padding: '40px', borderRadius: '8px', width: '700px', border: '2px solid #009688', boxShadow: '0 4px 15px rgba(0, 150, 136, 0.2)', textAlign: 'center' }}>
-            <span style={{ fontSize: '60px', display: 'block', marginBottom: '10px' }}>📱✨</span>
-            <h2 style={{ color: '#00796b', fontSize: '32px', margin: '0 0 10px 0' }}>Módulo Premium Activado</h2>
-            <p style={{ color: '#555', fontSize: '18px', marginBottom: '30px' }}>
-              ¡Felicidades, <strong>{nombreTienda}</strong>! Tu suscripción incluye el módulo de recargas de saldo. <br/>
-              <em>(Aquí en el futuro conectaremos la API real de Telcel, Movistar, AT&T, etc.)</em>
-            </p>
-            <div style={{ backgroundColor: '#e0f2f1', padding: '20px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
-              <input type="number" placeholder="Número de 10 dígitos..." style={{ padding: '15px', fontSize: '20px', width: '80%', borderRadius: '6px', border: '1px solid #009688', textAlign: 'center', outline: 'none' }} />
-              <div style={{ display: 'flex', gap: '10px', width: '80%' }}>
-                <select style={{ flex: 1, padding: '15px', fontSize: '18px', borderRadius: '6px', border: '1px solid #009688', outline: 'none' }}>
-                  <option>Compañía...</option><option>Telcel</option><option>Movistar</option><option>AT&T</option>
-                </select>
-                <select style={{ flex: 1, padding: '15px', fontSize: '18px', borderRadius: '6px', border: '1px solid #009688', outline: 'none' }}>
-                  <option>Monto...</option><option>$20</option><option>$50</option><option>$100</option>
-                </select>
-              </div>
-              <button onClick={() => mostrarNotificacion("✅ Recarga simulada exitosamente. (Falta conectar API del proveedor)")} style={{ width: '80%', padding: '15px', backgroundColor: '#009688', color: 'white', border: 'none', borderRadius: '6px', fontSize: '20px', fontWeight: 'bold', cursor: 'pointer' }}>⚡ Enviar Recarga</button>
-            </div>
           </div>
         </div>
       )}
