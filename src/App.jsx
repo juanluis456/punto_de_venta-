@@ -604,7 +604,8 @@ function App() {
           
           <div style={{ marginBottom: '25px' }}>
             <h1 style={{ margin: 0, color: '#1a1a1a', fontSize: '42px', fontWeight: '900', letterSpacing: '2px', fontStyle: 'italic' }}>
-              VENTAS LIhtg
+  VAZCAM
+</h1>
             </h1>
           </div>
 
