@@ -519,24 +519,39 @@ function App() {
     } catch (error) { mostrarNotificacion("Error conectando con el servidor", "error"); }
   }
 
+  // 🔥 FIX APLICADO AQUÍ PARA QUE LOS ESPACIOS NO ROMPAN EL ENLACE AL EDITAR
   const guardarEdicion = async (e) => {
     if (e) e.preventDefault();
     try {
-      const respuesta = await fetch(`${API_BASE}/productos/${productoEditando.codigo}`, {
+      const codigoSeguro = encodeURIComponent(productoEditando.codigo);
+      const respuesta = await fetch(`${API_BASE}/productos/${codigoSeguro}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', 'Tienda-ID': idTienda }, 
         body: JSON.stringify({ nombre: productoEditando.nombre, precio: productoEditando.precio, precio_compra: productoEditando.precio_compra, stock: productoEditando.stock, tipo_unidad: productoEditando.tipo_unidad, contenido: productoEditando.contenido })
       });
-      if (respuesta.ok) { mostrarNotificacion("✅ Producto actualizado correctamente!"); setProductoEditando(null); cargarInventario(); }
+      if (respuesta.ok) { 
+        mostrarNotificacion("✅ Producto actualizado correctamente!"); 
+        setProductoEditando(null); 
+        cargarInventario(); 
+      } else {
+        mostrarNotificacion("❌ Producto no encontrado en el servidor", "error");
+      }
     } catch (error) { mostrarNotificacion("Error conectando con el servidor", "error"); }
   }
 
+  // 🔥 FIX APLICADO AQUÍ PARA QUE LOS ESPACIOS NO ROMPAN EL ENLACE AL BORRAR
   const borrarProducto = async (codigoEliminar) => {
     const confirmar = window.confirm(`⚠️ ¿Estás seguro de que deseas borrar permanentemente este producto del sistema?`);
     if (confirmar) {
       try {
-        const respuesta = await fetch(`${API_BASE}/productos/${codigoEliminar}`, { method: 'DELETE', headers: { 'Tienda-ID': idTienda } });
+        const codigoSeguro = encodeURIComponent(codigoEliminar);
+        const respuesta = await fetch(`${API_BASE}/productos/${codigoSeguro}`, { method: 'DELETE', headers: { 'Tienda-ID': idTienda } });
         const data = await respuesta.json();
-        if (respuesta.ok) { mostrarNotificacion(`🗑️ ${data.mensaje}`); cargarInventario(); }
+        if (respuesta.ok) { 
+          mostrarNotificacion(`🗑️ ${data.mensaje}`); 
+          cargarInventario(); 
+        } else {
+          mostrarNotificacion(`❌ ${data.error || "No se pudo borrar"}`, "error");
+        }
       } catch (error) { mostrarNotificacion("Error con el servidor", "error"); }
     }
   }
@@ -901,7 +916,14 @@ function App() {
       {/* PANTALLA: ALMACÉN */}
       {pantalla === 'almacen' && (
         <div>
-          <h2>Lista de Productos en Almacén</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+            <h2 style={{ margin: 0 }}>Lista de Productos en Almacén</h2>
+            {/* 🔥 AQUÍ ESTÁ EL NUEVO CONTADOR GENERAL DE PRODUCTOS */}
+            <span style={{ backgroundColor: '#4CAF50', color: 'white', padding: '5px 15px', borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              📦 Total Registrados: {listaInventario.length}
+            </span>
+          </div>
+
           {productoEditando && (
             <div style={{ backgroundColor: '#fff8e1', padding: '20px', borderRadius: '8px', marginBottom: '20px', borderLeft: '5px solid #FF9800', border: '1px solid #ffe082' }}>
               <h3 style={{ marginTop: '0', color: '#b78103' }}>✏️ Editando: {String(productoEditando?.codigo || '')}</h3>
@@ -927,12 +949,15 @@ function App() {
             <input type="text" placeholder="Buscar por nombre o código..." value={busquedaAlmacen} onChange={(e) => setBusquedaAlmacen(e.target.value)} style={{ padding: '12px 15px', fontSize: '16px', width: '350px', borderRadius: '6px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', outline: 'none', boxSizing: 'border-box' }} />
           </div>
           <table border="1" style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', borderColor: '#ccc' }}>
-            <thead style={{ backgroundColor: '#e9ecef' }}><tr><th style={{ padding: '10px', color: '#333' }}>Código</th><th style={{ padding: '10px', color: '#333' }}>Nombre</th><th style={{ padding: '10px', color: '#333' }}>Contenido</th><th style={{ padding: '10px', color: '#333' }}>P. Venta</th><th style={{ padding: '10px', color: '#333' }}>P. Costo</th><th style={{ padding: '10px', color: '#333' }}>Ganancia/u</th><th style={{ padding: '10px', color: '#333' }}>Stock</th><th style={{ padding: '10px', color: '#333' }}>Acciones</th></tr></thead>
+            {/* 🔥 AQUÍ ESTÁ EL NUEVO ENCABEZADO CON LA COLUMNA # */}
+            <thead style={{ backgroundColor: '#e9ecef' }}><tr><th style={{ padding: '10px', color: '#333', textAlign: 'center', width: '30px' }}>#</th><th style={{ padding: '10px', color: '#333' }}>Código</th><th style={{ padding: '10px', color: '#333' }}>Nombre</th><th style={{ padding: '10px', color: '#333' }}>Contenido</th><th style={{ padding: '10px', color: '#333' }}>P. Venta</th><th style={{ padding: '10px', color: '#333' }}>P. Costo</th><th style={{ padding: '10px', color: '#333' }}>Ganancia/u</th><th style={{ padding: '10px', color: '#333' }}>Stock</th><th style={{ padding: '10px', color: '#333' }}>Acciones</th></tr></thead>
             <tbody>
               {productosFiltrados.map((item, index) => {
                 const stockVal = item?.stock !== undefined ? float(item.stock) : 0;
                 return (
                 <tr key={index} style={{ borderBottom: '1px solid #ccc', backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9f9f9' }}>
+                  {/* 🔥 AQUÍ SE IMPRIME EL NÚMERO DE LA FILA (1, 2, 3...) */}
+                  <td style={{ padding: '10px', textAlign: 'center', fontWeight: 'bold', color: '#555' }}>{index + 1}</td>
                   <td style={{ padding: '10px', color: '#1a1a1a' }}>{String(item?.codigo || '')}</td><td style={{ padding: '10px', fontWeight: 'bold', color: '#1a1a1a' }}>{String(item?.nombre || 'Sin nombre')}</td><td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>{formatoContenido(item)}</td><td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>${formatearDinero(item?.precio)}</td><td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>${formatearDinero(item?.precio_compra)}</td><td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>${formatearDinero(float(item?.precio) - float(item?.precio_compra))}</td><td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>{stockVal} cant.</td>
                   <td style={{ padding: '10px', display: 'flex', gap: '10px' }}><button onClick={() => setAuthModal({ visible: true, accion: 'editarProducto', parametro: item, titulo: `Editar ${item.nombre}` })} style={{ backgroundColor: '#FF9800', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Editar</button><button onClick={() => setAuthModal({ visible: true, accion: 'borrarProducto', parametro: item.codigo, titulo: `Borrar ${item.nombre}` })} style={{ backgroundColor: '#d32f2f', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Borrar</button></td>
                 </tr>
