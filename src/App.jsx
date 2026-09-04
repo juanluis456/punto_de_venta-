@@ -921,7 +921,7 @@ function App() {
                   onKeyDown={(e) => { 
                     if (e.key === 'Enter') { 
                       e.preventDefault(); 
-                      buscarProductoAPI(nuevoProd.codigo); 
+                      buscarProductoAPI(e.target.value); // 🔥 ÚNICO CAMBIO: e.target.value en vez de nuevoProd.codigo
                     } 
                   }} 
                   required placeholder="Ej. JITO o 75010313..." style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} 
