@@ -509,7 +509,7 @@ function App() {
   const buscarProductoAPI = async (codigoEscaneado) => {
     // Si no tiene código o son poquitos números, no buscamos en internet
     if (!codigoEscaneado || codigoEscaneado.length < 5) {
-      document.getElementById('input-nombre')?.focus();
+      // document.getElementById('input-nombre')?.focus(); // 🔥 FRENO PUESTO
       return;
     }
 
@@ -549,11 +549,13 @@ function App() {
         }, 150);
 
       } else {
-        document.getElementById('input-nombre')?.focus();
+        mostrarNotificacion("❌ No se encontró en la base de datos mundial.", "error"); // 🔥 TE AVISA
+        // document.getElementById('input-nombre')?.focus(); // 🔥 FRENO PUESTO
       }
     } catch (error) {
       console.error(error);
-      document.getElementById('input-nombre')?.focus();
+      mostrarNotificacion("❌ Error de la API en la nube.", "error"); // 🔥 TE AVISA
+      // document.getElementById('input-nombre')?.focus(); // 🔥 FRENO PUESTO
     }
   }
 
