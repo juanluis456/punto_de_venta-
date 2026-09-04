@@ -12,8 +12,8 @@ function createWindow () {
     }
   });
 
-  // 🚀 AQUÍ ESTÁ LA MAGIA: Carga la app directo de la nube para que se actualice sola
-  win.loadURL('https://punto-de-venta-wjqo.onrender.com');
+  // 🚀 MAGIA ACTIVADA: Ahora carga tu Frontend exacto desde la nube de Vercel
+  win.loadURL('https://punto-de-venta-fygnykbrh-juan-897b.vercel.app');
 }
 
 app.whenReady().then(createWindow);

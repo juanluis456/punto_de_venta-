@@ -505,6 +505,58 @@ function App() {
     }
   }
 
+  // 👻 FUNCIÓN FANTASMA: Busca el código en internet y rellena los datos solos
+  const buscarProductoAPI = async (codigoEscaneado) => {
+    // Si no tiene código o son poquitos números, no buscamos en internet
+    if (!codigoEscaneado || codigoEscaneado.length < 5) {
+      document.getElementById('input-nombre')?.focus();
+      return;
+    }
+
+    mostrarNotificacion("🔎 Buscando producto en la nube...");
+
+    try {
+      const respuesta = await fetch(`https://world.openfoodfacts.org/api/v0/product/${codigoEscaneado}.json`);
+      const data = await respuesta.json();
+
+      if (data.status === 1 && data.product) {
+        // Encontramos el producto, extraemos los datos
+        const nombreAPI = data.product.product_name_es || data.product.product_name || '';
+        let cantidadAPI = data.product.quantity || '';
+        
+        let unidadDetectada = 'pza';
+        let contenidoDetectado = '';
+
+        if (cantidadAPI) {
+          const cantLower = cantidadAPI.toLowerCase();
+          if (cantLower.includes('ml')) { unidadDetectada = 'ml'; contenidoDetectado = cantLower.replace(/[^\d.]/g, ''); }
+          else if (cantLower.includes('kg')) { unidadDetectada = 'kg'; contenidoDetectado = cantLower.replace(/[^\d.]/g, ''); }
+          else if (cantLower.includes('g') && !cantLower.includes('kg')) { unidadDetectada = 'g'; contenidoDetectado = cantLower.replace(/[^\d.]/g, ''); }
+          else if (cantLower.includes('l') && !cantLower.includes('ml')) { unidadDetectada = 'L'; contenidoDetectado = cantLower.replace(/[^\d.]/g, ''); }
+        }
+
+        setNuevoProd(prev => ({
+          ...prev,
+          nombre: nombreAPI || prev.nombre,
+          tipo_unidad: unidadDetectada,
+          contenido: contenidoDetectado || prev.contenido
+        }));
+
+        mostrarNotificacion(`✨ ¡Producto detectado! Precio por favor.`);
+        setTimeout(() => { 
+          const precioInput = document.getElementById('input-precio-venta');
+          if(precioInput) precioInput.focus(); 
+        }, 150);
+
+      } else {
+        document.getElementById('input-nombre')?.focus();
+      }
+    } catch (error) {
+      console.error(error);
+      document.getElementById('input-nombre')?.focus();
+    }
+  }
+
   const guardarProducto = async (e) => {
     if (e) e.preventDefault();
     try {
@@ -861,14 +913,25 @@ function App() {
           <div style={{ flex: '1' }}>
             <h2>Registrar Producto Nuevo</h2>
             <form onSubmit={guardarProducto} style={{ display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: '#ffffff', padding: '20px', borderRadius: '8px', border: '1px solid #ccc' }}>
-              <div><label>Código o Clave Corta:</label><input type="text" value={nuevoProd.codigo} onChange={(e) => setNuevoProd({...nuevoProd, codigo: e.target.value})} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('input-nombre').focus(); } }} required placeholder="Ej. JITO o 75010313..." style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
+              <div>
+                <label>Código o Clave Corta:</label>
+                <input type="text" value={nuevoProd.codigo} onChange={(e) => setNuevoProd({...nuevoProd, codigo: e.target.value})} 
+                  onKeyDown={(e) => { 
+                    if (e.key === 'Enter') { 
+                      e.preventDefault(); 
+                      buscarProductoAPI(nuevoProd.codigo); 
+                    } 
+                  }} 
+                  required placeholder="Ej. JITO o 75010313..." style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} 
+                />
+              </div>
               <div><label>Nombre:</label><input id="input-nombre" type="text" value={nuevoProd.nombre} onChange={(e) => setNuevoProd({...nuevoProd, nombre: e.target.value})} required placeholder="Ej. Jitomate Saladet" style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
                 <div style={{ flex: '1' }}><label>Unidad de Medida:</label><select value={nuevoProd.tipo_unidad} onChange={(e) => setNuevoProd({...nuevoProd, tipo_unidad: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }}><option value="pza">Pieza Única (pza)</option><option value="kg">Kilogramos (kg)</option><option value="g">Gramos (g)</option><option value="ml">Mililitros (ml)</option><option value="L">Litros (L)</option></select></div>
                 <div style={{ flex: '1' }}><label>Contenido neto:</label><input type="text" value={nuevoProd.contenido} onChange={(e) => setNuevoProd({...nuevoProd, contenido: e.target.value})} placeholder="Ej. 1, 600" style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
               </div>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
-                <div style={{ flex: '1' }}><label>Precio de Venta ($):</label><input type="number" step="any" value={nuevoProd.precio} onChange={(e) => setNuevoProd({...nuevoProd, precio: e.target.value})} required placeholder="Ej. 22.50" style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
+                <div style={{ flex: '1' }}><label>Precio de Venta ($):</label><input id="input-precio-venta" type="number" step="any" value={nuevoProd.precio} onChange={(e) => setNuevoProd({...nuevoProd, precio: e.target.value})} required placeholder="Ej. 22.50" style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
                 <div style={{ flex: '1' }}><label>Precio Proveedor ($):</label><input type="number" step="any" value={nuevoProd.precio_compra} onChange={(e) => setNuevoProd({...nuevoProd, precio_compra: e.target.value})} required placeholder="Ej. 15.00" style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
               </div>
               <div><label>Cantidad/Kilos inicial en tienda:</label><input type="number" step="any" min="0" value={nuevoProd.stock} onChange={(e) => setNuevoProd({...nuevoProd, stock: e.target.value})} required placeholder="Ej. 24.5" style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
