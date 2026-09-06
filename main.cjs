@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session } = require('electron'); // 🔥 Agregamos session
+const { app, BrowserWindow, session } = require('electron');
 const path = require('path');
 
 function createWindow () {
@@ -12,11 +12,15 @@ function createWindow () {
     }
   });
 
-  // 🧹 MAGIA ANTI-CACHÉ: Borra la memoria vieja cada vez que se abre el sistema
-  win.webContents.session.clearCache();
+  // 🧹 LIMPIEZA EXTREMA Y DEFINITIVA
+  session.defaultSession.clearCache();
+  session.defaultSession.clearStorageData();
 
-  // 🚀 MAGIA ACTIVADA: Carga tu Frontend exacto desde la nube de Vercel
-  win.loadURL('https://punto-de-venta-fygnykbrh-juan-897b.vercel.app');
+  // 🚀 CONEXIÓN EN LÍNEA: Le agregamos la hora exacta al final del enlace 
+  // para forzar a Electron a jalar la versión más fresca de Vercel siempre.
+  const urlVercel = 'https://punto-de-venta-fygnykbrh-juan-897b.vercel.app/?t=' + Date.now();
+  
+  win.loadURL(urlVercel, { extraHeaders: 'pragma: no-cache\n' });
 }
 
 app.whenReady().then(createWindow);
