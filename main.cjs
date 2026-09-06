@@ -12,13 +12,14 @@ function createWindow () {
     }
   });
 
-  // 🧹 LIMPIEZA EXTREMA Y DEFINITIVA
+  // Limpieza agresiva de caché al iniciar
   session.defaultSession.clearCache();
-  session.defaultSession.clearStorageData();
+  session.defaultSession.clearStorageData({
+    storages: ['appcache', 'cookies', 'filesystem', 'indexdb', 'localstorage', 'shaderbase', 'websql', 'serviceworkers', 'cachestorage']
+  });
 
-  // 🚀 CONEXIÓN EN LÍNEA: Le agregamos la hora exacta al final del enlace 
-  // para forzar a Electron a jalar la versión más fresca de Vercel siempre.
-  const urlVercel = 'https://punto-de-venta-fygnykbrh-juan-897b.vercel.app/?t=' + Date.now();
+  // El link de Vercel que se ve en tu foto, forzado a recargar
+  const urlVercel = 'https://punto-de-venta-lake.vercel.app/?t=' + Date.now();
   
   win.loadURL(urlVercel, { extraHeaders: 'pragma: no-cache\n' });
 }

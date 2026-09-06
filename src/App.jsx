@@ -921,7 +921,15 @@ function App() {
                   onKeyDown={(e) => { 
                     if (e.key === 'Enter') { 
                       e.preventDefault(); 
-                      buscarProductoAPI(e.target.value); // 🔥 ÚNICO CAMBIO: e.target.value en vez de nuevoProd.codigo
+                      // 🔥 AQUÍ ESTÁ LA NUEVA MAGIA: Checa repetidos antes de buscar en internet
+                      const codEscaneado = String(e.target.value).trim();
+                      const prodRepetido = (listaInventario || []).find(item => String(item?.codigo || '') === codEscaneado);
+                      
+                      if (prodRepetido) {
+                        mostrarNotificacion(`⚠️ ¡Aguas! "${prodRepetido.nombre || 'Este producto'}" ya está registrado en tu almacén.`, "error");
+                      } else {
+                        buscarProductoAPI(codEscaneado); 
+                      }
                     } 
                   }} 
                   required placeholder="Ej. JITO o 75010313..." style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} 
