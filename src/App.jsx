@@ -79,7 +79,7 @@ function App() {
       const respuesta = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario: user, password: pass })
+        body: JSON.stringify({ usuario: user, pass })
       });
 
       const data = await respuesta.json();
@@ -926,7 +926,8 @@ function App() {
                       const prodRepetido = (listaInventario || []).find(item => String(item?.codigo || '') === codEscaneado);
                       
                       if (prodRepetido) {
-                        mostrarNotificacion(`⚠️ ¡Aguas! "${prodRepetido.nombre || 'Este producto'}" ya está registrado en tu almacén.`, "error");
+                        // AQUÍ YA ESTÁ EL MENSAJE FORMAL SIN EL AGUAS
+                        mostrarNotificacion(`⚠️ El producto "${prodRepetido.nombre || 'Este producto'}" ya está registrado en tu almacén.`, "error");
                       } else {
                         buscarProductoAPI(codEscaneado); 
                       }
