@@ -926,7 +926,7 @@ function App() {
                       const prodRepetido = (listaInventario || []).find(item => String(item?.codigo || '') === codEscaneado);
                       
                       if (prodRepetido) {
-                        mostrarNotificacion(`⚠️ ¡Aguas! "${prodRepetido.nombre || 'Este producto'}" ya está registrado en tu almacén.`, "error");
+                        mostrarNotificacion(`⚠️  "${prodRepetido.nombre || 'Este producto'}" ya está registrado en tu almacén.`, "error");
                       } else {
                         buscarProductoAPI(codEscaneado); 
                       }
