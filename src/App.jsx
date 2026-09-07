@@ -28,14 +28,13 @@ function App() {
   const inputRef = useRef(null)
   const [pantalla, setPantalla] = useState('ventas')
   
-  // 🔥 NUEVO ESTADO PARA CONTROLAR LA CAJITA DESPLEGABLE DE STOCK BAJO
+  // 🔥 ESTADO PARA CONTROLAR LA CAJITA DESPLEGABLE DE STOCK BAJO
   const [mostrarListaStock, setMostrarListaStock] = useState(false);
   
   const [modalCobro, setModalCobro] = useState(false)
   const [pagoCliente, setPagoCliente] = useState('')
   const [procesandoCobro, setProcesandoCobro] = useState(false);
   
-  // 🔥 SE CAMBIÓ LA CATEGORÍA POR DEFECTO A "Abarrotes"
   const [nuevoProd, setNuevoProd] = useState({ codigo: '', nombre: '', precio: '', precio_compra: '', stock: '', tipo_unidad: 'pza', contenido: '', categoria: 'Abarrotes', imagen: '' })
   
   const [busquedaSurtir, setBusquedaSurtir] = useState('')
@@ -46,7 +45,6 @@ function App() {
 
   const [listaInventario, setListaInventario] = useState([])
   const [busquedaAlmacen, setBusquedaAlmacen] = useState('')
-  // 🔥 ESTADO PARA LOS BLOQUES (TABS) DEL ALMACÉN
   const [filtroCategoria, setFiltroCategoria] = useState('Todos')
   const [productoEditando, setProductoEditando] = useState(null)
 
@@ -199,8 +197,8 @@ function App() {
     setProductoEditando(null);
     setPagoCliente('');
     
-    if (pantalla === 'corte') cargarCorteDeCaja();
-    if (pantalla === 'tickets') cargarHistorialVentas();
+    // 🔥 ACTUALIZA EL HISTORIAL SI ENTRAS A CORTE, TICKETS O SALIDAS
+    if (pantalla === 'corte' || pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
 
     if (pantalla === 'ventas') {
       setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 150);
@@ -569,7 +567,6 @@ function App() {
       });
       if (respuesta.ok) {
         mostrarNotificacion("✅ Producto guardado con éxito");
-        // 🔥 Limpia la categoría para que quede en "Abarrotes" otra vez
         setNuevoProd({ codigo: '', nombre: '', precio: '', precio_compra: '', stock: '', tipo_unidad: 'pza', contenido: '', categoria: 'Abarrotes', imagen: '' });
         cargarInventario();
       }
@@ -589,7 +586,7 @@ function App() {
           stock: productoEditando.stock, 
           tipo_unidad: productoEditando.tipo_unidad, 
           contenido: productoEditando.contenido, 
-          categoria: productoEditando.categoria || 'Sin Asignar', // 🔥 FIX PARA QUE NO PIERDA CATEGORÍA
+          categoria: productoEditando.categoria || 'Sin Asignar', 
           imagen: productoEditando.imagen || ''
         })
       });
@@ -656,10 +653,28 @@ function App() {
     } catch (error) { console.error("Error al crear el PDF de faltantes:", error); }
   }
 
-  // 🔥 AQUÍ ESTÁ EL FIX: LOS VIEJOS VAN A "Sin Asignar"
+  // 🔥 FUNCIÓN NUEVA: RECOGE TODAS LAS VENTAS Y SUMA LOS ARTÍCULOS QUE HAN SALIDO
+  const obtenerResumenSalidas = () => {
+    const resumen = {};
+    (historialVentas || []).forEach(venta => {
+      if (!venta) return;
+      (venta.articulos || []).forEach(art => {
+        const cod = art.codigo || 'SIN-CODIGO';
+        if (!resumen[cod]) {
+          resumen[cod] = { ...art, cantidadTotal: 0 };
+        }
+        resumen[cod].cantidadTotal += float(art.cantidad);
+      });
+    });
+    // Lo convertimos en arreglo y lo ordenamos de mayor a menor salida
+    return Object.values(resumen).sort((a, b) => b.cantidadTotal - a.cantidadTotal);
+  };
+
+  const datosSalidas = obtenerResumenSalidas();
+
   const productosFiltrados = (listaInventario || []).filter(item => {
       if (!item) return false;
-      const categoriaDelProducto = item.categoria || 'Sin Asignar'; // <-- Magia arreglada
+      const categoriaDelProducto = item.categoria || 'Sin Asignar'; 
       const pasaCategoria = filtroCategoria === 'Todos' || categoriaDelProducto === filtroCategoria;
       const termino = String(busquedaAlmacen || '').trim().toLowerCase();
       const nom = String(item.nombre || '').toLowerCase(); const cod = String(item.codigo || '').toLowerCase();
@@ -721,7 +736,7 @@ function App() {
       `}</style>
 
       {notificacion.visible && (
-        <div style={{ position: 'fixed', bottom: '30px', right: '30px', backgroundColor: notificacion.tipo === 'error' ? '#f44336' : notificacion.mensaje.includes('⚠️') ? '#FF9800' : '#4CAF50', color: 'white', padding: '20px 30px', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', zIndex: 100000, fontSize: '18px', fontWeight: 'bold', whiteSpace: 'pre-wrap', display: 'flex', alignItems: 'center', gap: '15px', animation: 'deslizarArriba 0.3s ease-out' }}>
+        <div style={{ position: 'fixed', bottom: '30px', right: '30px', backgroundColor: notificacion.tipo === 'error' ? '#f44336' : '#4CAF50', color: 'white', padding: '20px 30px', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', zIndex: 100000, fontSize: '18px', fontWeight: 'bold', whiteSpace: 'pre-wrap', display: 'flex', alignItems: 'center', gap: '15px', animation: 'deslizarArriba 0.3s ease-out' }}>
           <span style={{ fontSize: '28px' }}>
             {notificacion.tipo === 'error' ? '❌' : notificacion.mensaje.includes('⚠️') ? '⚠️' : '✅'}
           </span>
@@ -747,9 +762,12 @@ function App() {
 
         <button onClick={() => setPantalla('tickets')} style={{ padding: '10px 20px', backgroundColor: pantalla === 'tickets' ? '#E91E63' : '#e0e0e0', color: pantalla === 'tickets' ? 'white' : '#333', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}>🧾 Tickets</button>
         <button onClick={() => setPantalla('corte')} style={{ padding: '10px 20px', backgroundColor: pantalla === 'corte' ? '#FF9800' : '#e0e0e0', color: pantalla === 'corte' ? 'white' : '#333', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}>📊 Corte de Caja</button>
+        
+        {/* 🔥 AQUÍ ESTÁ EL BOTÓN DE SALIDAS PEGADITO A CORTE DE CAJA */}
+        <button onClick={() => setPantalla('salidas')} style={{ padding: '10px 20px', backgroundColor: pantalla === 'salidas' ? '#2e7d32' : '#e0e0e0', color: pantalla === 'salidas' ? 'white' : '#333', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}>📤 Salidas</button>
       </div>
 
-      {/* 🔥 CAJA DE STOCK BAJO TIPO ACORDEÓN */}
+      {/* CAJA DE STOCK BAJO TIPO ACORDEÓN */}
       {cantidadStockBajo > 0 && (
         <div style={{ backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '6px', marginBottom: '20px', border: '1px solid #f5c6cb', overflow: 'hidden' }}>
           <div 
@@ -779,7 +797,49 @@ function App() {
         </div>
       )}
 
-      {/* ⚡ PANTALLA: MODO APAGÓN */}
+      {/* 🔥 NUEVA PANTALLA: SALIDAS DEL DÍA */}
+      {pantalla === 'salidas' && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
+            <span style={{ fontSize: '32px' }}>📤</span>
+            <h2 style={{ color: '#2e7d32', margin: '0' }}>Reporte de Productos Vendidos Hoy</h2>
+          </div>
+          <p style={{ color: '#555', fontSize: '16px', marginBottom: '20px' }}>Esta tabla suma automáticamente todas las cantidades de los productos que han salido en el día de hoy.</p>
+          
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden' }}>
+            <table border="0" style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+              <thead style={{ backgroundColor: '#e8f5e9' }}>
+                <tr>
+                  <th style={{ padding: '15px', color: '#1b5e20', borderBottom: '2px solid #a5d6a7' }}>#</th>
+                  <th style={{ padding: '15px', color: '#1b5e20', borderBottom: '2px solid #a5d6a7' }}>Código</th>
+                  <th style={{ padding: '15px', color: '#1b5e20', borderBottom: '2px solid #a5d6a7' }}>Nombre del Producto</th>
+                  <th style={{ padding: '15px', color: '#1b5e20', borderBottom: '2px solid #a5d6a7' }}>Contenido</th>
+                  <th style={{ padding: '15px', color: '#1b5e20', borderBottom: '2px solid #a5d6a7', textAlign: 'center' }}>Total Salidas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {datosSalidas.length > 0 ? (
+                  datosSalidas.map((item, index) => (
+                    <tr key={index} style={{ borderBottom: '1px solid #eee', backgroundColor: index % 2 === 0 ? '#ffffff' : '#fafafa' }}>
+                      <td style={{ padding: '15px', color: '#1a1a1a', fontWeight: 'bold' }}>{index + 1}</td>
+                      <td style={{ padding: '15px', color: '#1a1a1a' }}>{String(item?.codigo || '')}</td>
+                      <td style={{ padding: '15px', fontWeight: 'bold', color: '#1a1a1a', fontSize: '16px' }}>{String(item?.nombre || 'Sin nombre')}</td>
+                      <td style={{ padding: '15px', color: '#1a1a1a' }}>{formatoContenido(item)}</td>
+                      <td style={{ padding: '15px', color: '#2e7d32', fontWeight: 'bold', fontSize: '18px', textAlign: 'center' }}>
+                        {item.cantidadTotal} {item.tipo_unidad === 'kg' || item.tipo_unidad === 'g' ? 'kg/g' : 'pzas'}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr><td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: '#666', fontSize: '18px', fontWeight: 'bold' }}>Aún no hay salidas registradas el día de hoy.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* PANTALLA: MODO APAGÓN */}
       {pantalla === 'apagon' && (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ backgroundColor: '#ffffff', padding: '30px', borderRadius: '8px', width: '800px', border: '1px solid #673AB7', boxShadow: '0 4px 10px rgba(103,58,183,0.1)' }}>
@@ -971,7 +1031,6 @@ function App() {
               
               <div><label>Link de la Imagen (Opcional):</label><input type="text" value={nuevoProd.imagen} onChange={(e) => setNuevoProd({...nuevoProd, imagen: e.target.value})} placeholder="Pega el link de la foto aquí o escanea para buscar automático..." style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
 
-              {/* 🔥 SELECTOR CON "Sin Asignar" AÑADIDO */}
               <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
                 <div style={{ flex: '1' }}>
                   <label>Categoría del Bloque:</label>
@@ -1046,7 +1105,6 @@ function App() {
             </span>
           </div>
 
-          {/* 🔥 BOTONERA CON "Sin Asignar" PARA LOS PRODUCTOS VIEJOS */}
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
             {['Todos', 'Abarrotes', 'Frutas y Verduras', 'Limpieza', 'Cosméticos', 'Bebidas', 'Sin Asignar'].map(cat => (
               <button 
@@ -1085,7 +1143,6 @@ function App() {
                   </div>
                   <div style={{ flex: '1' }}><label>Contenido:</label><input type="text" value={productoEditando.contenido || ''} onChange={(e) => setProductoEditando({...productoEditando, contenido: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
                   
-                  {/* 🔥 SELECTOR CON "Sin Asignar" AÑADIDO */}
                   <div style={{ flex: '1' }}><label>Categoría:</label>
                     <select value={productoEditando.categoria || 'Sin Asignar'} onChange={(e) => setProductoEditando({...productoEditando, categoria: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }}>
                       <option value="Abarrotes">Abarrotes</option>
@@ -1140,10 +1197,7 @@ function App() {
                   
                   <td style={{ padding: '10px', color: '#1a1a1a' }}>{String(item?.codigo || '')}</td>
                   <td style={{ padding: '10px', fontWeight: 'bold', color: '#1a1a1a' }}>{String(item?.nombre || 'Sin nombre')}</td>
-                  
-                  {/* 🔥 FIX: LO QUE ESTÁ EN BLANCO AHORA SALE COMO "Sin Asignar" */}
                   <td style={{ padding: '10px', color: '#2196F3', fontWeight: 'bold' }}>{item.categoria || 'Sin Asignar'}</td>
-                  
                   <td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>{formatoContenido(item)}</td>
                   <td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>${formatearDinero(item?.precio)}</td>
                   <td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>${formatearDinero(item?.precio_compra)}</td>
