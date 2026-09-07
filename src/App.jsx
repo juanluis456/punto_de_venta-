@@ -35,8 +35,8 @@ function App() {
   const [pagoCliente, setPagoCliente] = useState('')
   const [procesandoCobro, setProcesandoCobro] = useState(false);
   
-  // 🔥 SE AGREGÓ "categoria" AL PRODUCTO NUEVO (Por defecto "General")
-  const [nuevoProd, setNuevoProd] = useState({ codigo: '', nombre: '', precio: '', precio_compra: '', stock: '', tipo_unidad: 'pza', contenido: '', categoria: 'General' })
+  // 🔥 SE AGREGÓ "imagen" AL PRODUCTO NUEVO
+  const [nuevoProd, setNuevoProd] = useState({ codigo: '', nombre: '', precio: '', precio_compra: '', stock: '', tipo_unidad: 'pza', contenido: '', categoria: 'General', imagen: '' })
   
   const [busquedaSurtir, setBusquedaSurtir] = useState('')
   const [listaSurtido, setListaSurtido] = useState([])
@@ -46,7 +46,6 @@ function App() {
 
   const [listaInventario, setListaInventario] = useState([])
   const [busquedaAlmacen, setBusquedaAlmacen] = useState('')
-  // 🔥 ESTADO PARA LOS BLOQUES (TABS) DEL ALMACÉN
   const [filtroCategoria, setFiltroCategoria] = useState('Todos')
   const [productoEditando, setProductoEditando] = useState(null)
 
@@ -85,7 +84,7 @@ function App() {
       const respuesta = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario: user, password: pass }) // ✅ CORREGIDO
+        body: JSON.stringify({ usuario: user, password: pass })
       });
 
       const data = await respuesta.json();
@@ -511,9 +510,8 @@ function App() {
     }
   }
 
-  // 👻 FUNCIÓN FANTASMA: Busca el código en internet y rellena los datos solos
+  // 👻 FUNCIÓN FANTASMA ACTUALIZADA: ¡SE ROBA LA FOTO DE INTERNET TAMBIÉN!
   const buscarProductoAPI = async (codigoEscaneado) => {
-    // Si no tiene código o son poquitos números, no buscamos en internet
     if (!codigoEscaneado || codigoEscaneado.length < 5) {
       return;
     }
@@ -525,9 +523,9 @@ function App() {
       const data = await respuesta.json();
 
       if (data.status === 1 && data.product) {
-        // Encontramos el producto, extraemos los datos
         const nombreAPI = data.product.product_name_es || data.product.product_name || '';
         let cantidadAPI = data.product.quantity || '';
+        const imagenAPI = data.product.image_url || ''; // 🔥 ROBO DE IMAGEN
         
         let unidadDetectada = 'pza';
         let contenidoDetectado = '';
@@ -544,7 +542,8 @@ function App() {
           ...prev,
           nombre: nombreAPI || prev.nombre,
           tipo_unidad: unidadDetectada,
-          contenido: contenidoDetectado || prev.contenido
+          contenido: contenidoDetectado || prev.contenido,
+          imagen: imagenAPI || prev.imagen // 🔥 LA PONE EN EL FORMULARIO
         }));
 
         mostrarNotificacion(`✨ ¡Producto detectado! Precio por favor.`);
@@ -570,21 +569,29 @@ function App() {
       });
       if (respuesta.ok) {
         mostrarNotificacion("✅ Producto guardado con éxito");
-        // 🔥 Limpia también la categoría para que quede en General otra vez
-        setNuevoProd({ codigo: '', nombre: '', precio: '', precio_compra: '', stock: '', tipo_unidad: 'pza', contenido: '', categoria: 'General' });
+        setNuevoProd({ codigo: '', nombre: '', precio: '', precio_compra: '', stock: '', tipo_unidad: 'pza', contenido: '', categoria: 'General', imagen: '' });
         cargarInventario();
       }
     } catch (error) { mostrarNotificacion("Error conectando con el servidor", "error"); }
   }
 
-  // 🔥 FIX APLICADO AQUÍ PARA QUE LOS ESPACIOS NO ROMPAN EL ENLACE AL EDITAR Y SE GUARDE LA CATEGORÍA
+  // 🔥 GUARDAR EDICIÓN (Añadido el campo de imagen)
   const guardarEdicion = async (e) => {
     if (e) e.preventDefault();
     try {
       const codigoSeguro = encodeURIComponent(productoEditando.codigo);
       const respuesta = await fetch(`${API_BASE}/productos/${codigoSeguro}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', 'Tienda-ID': idTienda }, 
-        body: JSON.stringify({ nombre: productoEditando.nombre, precio: productoEditando.precio, precio_compra: productoEditando.precio_compra, stock: productoEditando.stock, tipo_unidad: productoEditando.tipo_unidad, contenido: productoEditando.contenido, categoria: productoEditando.categoria || 'General' })
+        body: JSON.stringify({ 
+          nombre: productoEditando.nombre, 
+          precio: productoEditando.precio, 
+          precio_compra: productoEditando.precio_compra, 
+          stock: productoEditando.stock, 
+          tipo_unidad: productoEditando.tipo_unidad, 
+          contenido: productoEditando.contenido, 
+          categoria: productoEditando.categoria || 'General',
+          imagen: productoEditando.imagen || '' // 🔥 SE GUARDA LA IMAGEN AL EDITAR
+        })
       });
       if (respuesta.ok) { 
         mostrarNotificacion("✅ Producto actualizado correctamente!"); 
@@ -596,7 +603,6 @@ function App() {
     } catch (error) { mostrarNotificacion("Error conectando con el servidor", "error"); }
   }
 
-  // 🔥 FIX APLICADO AQUÍ PARA QUE LOS ESPACIOS NO ROMPAN EL ENLACE AL BORRAR
   const borrarProducto = async (codigoEliminar) => {
     const confirmar = window.confirm(`⚠️ ¿Estás seguro de que deseas borrar permanentemente este producto del sistema?`);
     if (confirmar) {
@@ -650,15 +656,10 @@ function App() {
     } catch (error) { console.error("Error al crear el PDF de faltantes:", error); }
   }
 
-  // 🔥 NUEVO FILTRO PARA LOS BLOQUES DEL ALMACÉN
   const productosFiltrados = (listaInventario || []).filter(item => {
       if (!item) return false;
-      
-      // 1. Filtrar por bloque/pestaña
       const categoriaDelProducto = item.categoria || 'General';
       const pasaCategoria = filtroCategoria === 'Todos' || categoriaDelProducto === filtroCategoria;
-      
-      // 2. Filtrar por texto en el buscador
       const termino = String(busquedaAlmacen || '').trim().toLowerCase();
       const nom = String(item.nombre || '').toLowerCase(); const cod = String(item.codigo || '').toLowerCase();
       const pasaBusqueda = (nom.includes(termino) || cod.includes(termino));
@@ -668,9 +669,6 @@ function App() {
 
   const p_Real = parseFloat(String(pagoCliente).replace(/,/g, '')) || 0;
 
-  // ==========================================
-  // VISTA 1: CONTROL DE ACCESO (PANTALLA DE LOGIN SAAS)
-  // ==========================================
   if (!idTienda) {
     return (
       <div translate="no" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f4f6f9', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box' }}>
@@ -711,9 +709,6 @@ function App() {
     );
   }
 
-  // ==========================================
-  // VISTA 2: APLICACIÓN PRINCIPAL (PUNTO DE VENTA)
-  // ==========================================
   return (
     <div translate="no" style={{ padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f4f6f9', color: '#1a1a1a', minHeight: '100vh' }}>
       
@@ -756,7 +751,6 @@ function App() {
       {/* 🔥 CAJA DE STOCK BAJO TIPO ACORDEÓN */}
       {cantidadStockBajo > 0 && (
         <div style={{ backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '6px', marginBottom: '20px', border: '1px solid #f5c6cb', overflow: 'hidden' }}>
-          {/* Cabecera Clickable con la flechita */}
           <div 
             onClick={() => setMostrarListaStock(!mostrarListaStock)} 
             style={{ padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', backgroundColor: mostrarListaStock ? '#f5c6cb' : 'transparent', transition: 'background-color 0.2s' }}
@@ -771,7 +765,6 @@ function App() {
             </span>
           </div>
           
-          {/* Lista oculta que se despliega */}
           {mostrarListaStock && (
             <div style={{ padding: '15px', borderTop: '1px solid #f5c6cb', fontSize: '15px', lineHeight: '1.5' }}>
               {productosPorAcabar.map((p, idx, arr) => (
@@ -870,11 +863,17 @@ function App() {
                   <div style={{ position: 'absolute', top: '48px', left: '0', width: '100%', backgroundColor: '#ffffff', border: '1px solid #ccc', borderRadius: '6px', boxShadow: '0px 4px 12px rgba(0,0,0,0.15)', zIndex: '10', maxHeight: '200px', overflowY: 'auto' }}>
                     {sugerenciasVentas.map((prod, idx) => (
                       <div key={idx} onClick={() => agregarAlCarritoDirecto(prod)} style={{ padding: '12px', borderBottom: '1px solid #eee', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', backgroundColor: idx === 0 ? '#f0f4f8' : 'transparent' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2196F3'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = idx === 0 ? '#f0f4f8' : 'transparent'}>
-                        <div>
-                          <strong style={{ color: '#1a1a1a' }}>{String(prod?.nombre || 'Sin nombre')} </strong>
-                          <span style={{ fontSize: '13px', color: '#1a1a1a', fontWeight: 'bold' }}>{formatoContenido(prod)}</span>
-                          <span style={{ fontSize: '12px', color: '#666', display: 'block' }}>Cód: {String(prod?.codigo || '')}</span>
+                        
+                        {/* 🔥 IMAGEN EN EL BUSCADOR */}
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          {prod.imagen ? <img src={prod.imagen} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #ccc' }} alt="img" /> : <span style={{ fontSize: '24px' }}>📦</span>}
+                          <div>
+                            <strong style={{ color: '#1a1a1a' }}>{String(prod?.nombre || 'Sin nombre')} </strong>
+                            <span style={{ fontSize: '13px', color: '#1a1a1a', fontWeight: 'bold' }}>{formatoContenido(prod)}</span>
+                            <span style={{ fontSize: '12px', color: '#666', display: 'block' }}>Cód: {String(prod?.codigo || '')}</span>
+                          </div>
                         </div>
+                        
                         <div style={{ textAlign: 'right' }}><span style={{ color: '#1a1a1a', fontWeight: 'bold' }}>${formatearDinero(prod?.precio)}</span><span style={{ fontSize: '12px', color: (prod?.stock !== undefined ? float(prod.stock) : 0) <= 3 ? '#d32f2f' : '#1a1a1a', display: 'block' }}>Stock: {prod?.stock !== undefined ? float(prod.stock) : 0}</span></div>
                       </div>
                     ))}
@@ -895,7 +894,6 @@ function App() {
                 </h1>
                 <div style={{ height: '40px', width: '3px', backgroundColor: '#e0e0e0', borderRadius: '2px' }}></div> 
                 
-                {/* 🔥 AQUÍ ESTÁ EL PUNTITO DEL PATO PARA QUE FUNCIONE EN EL .EXE */}
                 <img src={patoImg} alt="Marca del Desarrollador" title="Software Desarrollado por Ing. Juan Luis" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #2196F3', boxShadow: '0 4px 8px rgba(0,0,0,0.15)' }} />
                 
                 <button onClick={() => setModalLogout(true)} title="Cerrar Sesión de Caja" style={{ background: '#e0e0e0', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '16px', color: '#333' }}>🚪</button>
@@ -905,6 +903,7 @@ function App() {
             <table border="1" style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', borderColor: '#ccc' }}>
               <thead style={{ backgroundColor: '#e9ecef' }}>
                 <tr>
+                  <th style={{ padding: '10px', color: '#333', width: '50px', textAlign: 'center' }}>Img</th> {/* 🔥 COLUMNA IMAGEN */}
                   <th style={{ padding: '10px', color: '#333' }}>Código</th>
                   <th style={{ padding: '10px', color: '#333' }}>Nombre</th>
                   <th style={{ padding: '10px', color: '#333' }}>Contenido</th>
@@ -917,6 +916,10 @@ function App() {
               <tbody>
                 {carrito.map((item, index) => (
                   <tr key={index} style={{ borderBottom: '1px solid #ccc', backgroundColor: '#ffffff' }}>
+                    {/* 🔥 MOSTRAR IMAGEN EN EL CARRITO */}
+                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                      {item.imagen ? <img src={item.imagen} alt="img" style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #ccc' }} /> : <span style={{ fontSize: '24px' }}>📦</span>}
+                    </td>
                     <td style={{ padding: '10px', color: '#1a1a1a' }}>{String(item?.codigo || '')}</td>
                     <td style={{ padding: '10px', fontWeight: 'bold', color: '#1a1a1a' }}>{String(item?.nombre || 'Sin nombre')}</td>
                     <td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>{formatoContenido(item)}</td>
@@ -964,8 +967,12 @@ function App() {
                   required placeholder="Ej. JITO o 75010313..." style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} 
                 />
               </div>
+              
               <div><label>Nombre:</label><input id="input-nombre" type="text" value={nuevoProd.nombre} onChange={(e) => setNuevoProd({...nuevoProd, nombre: e.target.value})} required placeholder="Ej. Jitomate Saladet" style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
               
+              {/* 🔥 NUEVO CAMPO PARA EL LINK DE LA IMAGEN */}
+              <div><label>Link de la Imagen (Opcional):</label><input type="text" value={nuevoProd.imagen} onChange={(e) => setNuevoProd({...nuevoProd, imagen: e.target.value})} placeholder="Pega el link de la foto aquí o escanea para buscar automático..." style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
+
               <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
                 <div style={{ flex: '1' }}>
                   <label>Categoría del Bloque:</label>
@@ -1039,7 +1046,6 @@ function App() {
             </span>
           </div>
 
-          {/* 🔥 BOTONERA DE CATEGORÍAS */}
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
             {['Todos', 'General', 'Limpieza', 'Cosméticos', 'Abarrotes', 'Bebidas'].map(cat => (
               <button 
@@ -1072,7 +1078,7 @@ function App() {
                   <div style={{ flex: '1' }}><label>P. Costo ($):</label><input type="number" step="any" value={productoEditando.precio_compra || ''} onChange={(e) => setProductoEditando({...productoEditando, precio_compra: e.target.value})} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
                   <div style={{ flex: '1' }}><label>Stock actual:</label><input type="number" step="any" value={productoEditando.stock} onChange={(e) => setProductoEditando({...productoEditando, stock: e.target.value})} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
                 </div>
-                <div style={{ display: 'flex', gap: '20px', maxWidth: '600px', alignItems: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '20px', maxWidth: '800px', alignItems: 'flex-end' }}>
                   <div style={{ flex: '1' }}><label>Unidad:</label>
                     <select value={productoEditando.tipo_unidad || 'pza'} onChange={(e) => setProductoEditando({...productoEditando, tipo_unidad: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }}><option value="pza">Pieza (pza)</option><option value="kg">Kilogramos (kg)</option><option value="g">Gramos (g)</option><option value="ml">Mililitros (ml)</option><option value="L">Litros (L)</option></select>
                   </div>
@@ -1086,6 +1092,12 @@ function App() {
                       <option value="Abarrotes">Abarrotes</option>
                       <option value="Bebidas">Bebidas</option>
                     </select>
+                  </div>
+                  
+                  {/* 🔥 CAMPO DE EDICIÓN PARA LA IMAGEN */}
+                  <div style={{ flex: '2' }}>
+                    <label>Link Imagen:</label>
+                    <input type="text" value={productoEditando.imagen || ''} onChange={(e) => setProductoEditando({...productoEditando, imagen: e.target.value})} placeholder="URL de la imagen..." style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }} />
                   </div>
 
                 </div>
@@ -1101,6 +1113,7 @@ function App() {
             <thead style={{ backgroundColor: '#e9ecef' }}>
               <tr>
                 <th style={{ padding: '10px', color: '#333', textAlign: 'center', width: '30px' }}>#</th>
+                <th style={{ padding: '10px', color: '#333', textAlign: 'center', width: '50px' }}>Img</th> {/* 🔥 COLUMNA IMAGEN */}
                 <th style={{ padding: '10px', color: '#333' }}>Código</th>
                 <th style={{ padding: '10px', color: '#333' }}>Nombre</th>
                 <th style={{ padding: '10px', color: '#333' }}>Categoría</th>
@@ -1118,6 +1131,12 @@ function App() {
                 return (
                 <tr key={index} style={{ borderBottom: '1px solid #ccc', backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9f9f9' }}>
                   <td style={{ padding: '10px', textAlign: 'center', fontWeight: 'bold', color: '#555' }}>{index + 1}</td>
+                  
+                  {/* 🔥 MINIATURA DE LA IMAGEN EN ALMACÉN */}
+                  <td style={{ padding: '10px', textAlign: 'center' }}>
+                    {item.imagen ? <img src={item.imagen} alt="img" style={{ width: '35px', height: '35px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #ccc' }} /> : <span style={{ fontSize: '20px' }}>📦</span>}
+                  </td>
+                  
                   <td style={{ padding: '10px', color: '#1a1a1a' }}>{String(item?.codigo || '')}</td>
                   <td style={{ padding: '10px', fontWeight: 'bold', color: '#1a1a1a' }}>{String(item?.nombre || 'Sin nombre')}</td>
                   <td style={{ padding: '10px', color: '#2196F3', fontWeight: 'bold' }}>{item.categoria || 'General'}</td>
