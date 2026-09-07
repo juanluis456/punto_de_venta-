@@ -35,8 +35,8 @@ function App() {
   const [pagoCliente, setPagoCliente] = useState('')
   const [procesandoCobro, setProcesandoCobro] = useState(false);
   
-  // 🔥 SE CAMBIÓ LA CATEGORÍA POR DEFECTO A "Frutas y Verduras"
-  const [nuevoProd, setNuevoProd] = useState({ codigo: '', nombre: '', precio: '', precio_compra: '', stock: '', tipo_unidad: 'pza', contenido: '', categoria: 'Frutas y Verduras', imagen: '' })
+  // 🔥 SE CAMBIÓ LA CATEGORÍA POR DEFECTO A "Abarrotes"
+  const [nuevoProd, setNuevoProd] = useState({ codigo: '', nombre: '', precio: '', precio_compra: '', stock: '', tipo_unidad: 'pza', contenido: '', categoria: 'Abarrotes', imagen: '' })
   
   const [busquedaSurtir, setBusquedaSurtir] = useState('')
   const [listaSurtido, setListaSurtido] = useState([])
@@ -511,7 +511,6 @@ function App() {
     }
   }
 
-  // 👻 FUNCIÓN FANTASMA ACTUALIZADA: ¡SE ROBA LA FOTO DE INTERNET TAMBIÉN!
   const buscarProductoAPI = async (codigoEscaneado) => {
     if (!codigoEscaneado || codigoEscaneado.length < 5) {
       return;
@@ -570,8 +569,8 @@ function App() {
       });
       if (respuesta.ok) {
         mostrarNotificacion("✅ Producto guardado con éxito");
-        // 🔥 Limpia también la categoría para que quede en "Frutas y Verduras" otra vez
-        setNuevoProd({ codigo: '', nombre: '', precio: '', precio_compra: '', stock: '', tipo_unidad: 'pza', contenido: '', categoria: 'Frutas y Verduras', imagen: '' });
+        // 🔥 Limpia la categoría para que quede en "Abarrotes" otra vez
+        setNuevoProd({ codigo: '', nombre: '', precio: '', precio_compra: '', stock: '', tipo_unidad: 'pza', contenido: '', categoria: 'Abarrotes', imagen: '' });
         cargarInventario();
       }
     } catch (error) { mostrarNotificacion("Error conectando con el servidor", "error"); }
@@ -590,7 +589,7 @@ function App() {
           stock: productoEditando.stock, 
           tipo_unidad: productoEditando.tipo_unidad, 
           contenido: productoEditando.contenido, 
-          categoria: productoEditando.categoria || 'Frutas y Verduras', // 🔥 FIX CATEGORÍA
+          categoria: productoEditando.categoria || 'Sin Asignar', // 🔥 FIX PARA QUE NO PIERDA CATEGORÍA
           imagen: productoEditando.imagen || ''
         })
       });
@@ -657,9 +656,10 @@ function App() {
     } catch (error) { console.error("Error al crear el PDF de faltantes:", error); }
   }
 
+  // 🔥 AQUÍ ESTÁ EL FIX: LOS VIEJOS VAN A "Sin Asignar"
   const productosFiltrados = (listaInventario || []).filter(item => {
       if (!item) return false;
-      const categoriaDelProducto = item.categoria || 'Frutas y Verduras'; // 🔥 DEFAULT ACTUALIZADO
+      const categoriaDelProducto = item.categoria || 'Sin Asignar'; // <-- Magia arreglada
       const pasaCategoria = filtroCategoria === 'Todos' || categoriaDelProducto === filtroCategoria;
       const termino = String(busquedaAlmacen || '').trim().toLowerCase();
       const nom = String(item.nombre || '').toLowerCase(); const cod = String(item.codigo || '').toLowerCase();
@@ -971,16 +971,17 @@ function App() {
               
               <div><label>Link de la Imagen (Opcional):</label><input type="text" value={nuevoProd.imagen} onChange={(e) => setNuevoProd({...nuevoProd, imagen: e.target.value})} placeholder="Pega el link de la foto aquí o escanea para buscar automático..." style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
 
-              {/* 🔥 SELECTOR ACTUALIZADO A FRUTAS Y VERDURAS */}
+              {/* 🔥 SELECTOR CON "Sin Asignar" AÑADIDO */}
               <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
                 <div style={{ flex: '1' }}>
                   <label>Categoría del Bloque:</label>
-                  <select value={nuevoProd.categoria || 'Frutas y Verduras'} onChange={(e) => setNuevoProd({...nuevoProd, categoria: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }}>
+                  <select value={nuevoProd.categoria || 'Abarrotes'} onChange={(e) => setNuevoProd({...nuevoProd, categoria: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }}>
+                    <option value="Abarrotes">Abarrotes</option>
                     <option value="Frutas y Verduras">Frutas y Verduras</option>
                     <option value="Limpieza">Limpieza</option>
                     <option value="Cosméticos">Cosméticos</option>
-                    <option value="Abarrotes">Abarrotes</option>
                     <option value="Bebidas">Bebidas</option>
+                    <option value="Sin Asignar">Sin Asignar</option>
                   </select>
                 </div>
               </div>
@@ -1045,9 +1046,9 @@ function App() {
             </span>
           </div>
 
-          {/* 🔥 BOTONERA ACTUALIZADA A FRUTAS Y VERDURAS */}
+          {/* 🔥 BOTONERA CON "Sin Asignar" PARA LOS PRODUCTOS VIEJOS */}
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
-            {['Todos', 'Frutas y Verduras', 'Limpieza', 'Cosméticos', 'Abarrotes', 'Bebidas'].map(cat => (
+            {['Todos', 'Abarrotes', 'Frutas y Verduras', 'Limpieza', 'Cosméticos', 'Bebidas', 'Sin Asignar'].map(cat => (
               <button 
                 key={cat}
                 onClick={() => setFiltroCategoria(cat)}
@@ -1084,14 +1085,15 @@ function App() {
                   </div>
                   <div style={{ flex: '1' }}><label>Contenido:</label><input type="text" value={productoEditando.contenido || ''} onChange={(e) => setProductoEditando({...productoEditando, contenido: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
                   
-                  {/* 🔥 SELECTOR ACTUALIZADO A FRUTAS Y VERDURAS */}
+                  {/* 🔥 SELECTOR CON "Sin Asignar" AÑADIDO */}
                   <div style={{ flex: '1' }}><label>Categoría:</label>
-                    <select value={productoEditando.categoria || 'Frutas y Verduras'} onChange={(e) => setProductoEditando({...productoEditando, categoria: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }}>
+                    <select value={productoEditando.categoria || 'Sin Asignar'} onChange={(e) => setProductoEditando({...productoEditando, categoria: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }}>
+                      <option value="Abarrotes">Abarrotes</option>
                       <option value="Frutas y Verduras">Frutas y Verduras</option>
                       <option value="Limpieza">Limpieza</option>
                       <option value="Cosméticos">Cosméticos</option>
-                      <option value="Abarrotes">Abarrotes</option>
                       <option value="Bebidas">Bebidas</option>
+                      <option value="Sin Asignar">Sin Asignar</option>
                     </select>
                   </div>
                   
@@ -1139,8 +1141,8 @@ function App() {
                   <td style={{ padding: '10px', color: '#1a1a1a' }}>{String(item?.codigo || '')}</td>
                   <td style={{ padding: '10px', fontWeight: 'bold', color: '#1a1a1a' }}>{String(item?.nombre || 'Sin nombre')}</td>
                   
-                  {/* 🔥 SE MUESTRA FRUTAS Y VERDURAS POR DEFECTO SI NO TIENEN */}
-                  <td style={{ padding: '10px', color: '#2196F3', fontWeight: 'bold' }}>{item.categoria || 'Frutas y Verduras'}</td>
+                  {/* 🔥 FIX: LO QUE ESTÁ EN BLANCO AHORA SALE COMO "Sin Asignar" */}
+                  <td style={{ padding: '10px', color: '#2196F3', fontWeight: 'bold' }}>{item.categoria || 'Sin Asignar'}</td>
                   
                   <td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>{formatoContenido(item)}</td>
                   <td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>${formatearDinero(item?.precio)}</td>
