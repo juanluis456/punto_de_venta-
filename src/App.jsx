@@ -28,6 +28,9 @@ function App() {
   const inputRef = useRef(null)
   const [pantalla, setPantalla] = useState('ventas')
   
+  // 🔥 NUEVO ESTADO PARA CONTROLAR LA CAJITA DESPLEGABLE DE STOCK BAJO
+  const [mostrarListaStock, setMostrarListaStock] = useState(false);
+  
   const [modalCobro, setModalCobro] = useState(false)
   const [pagoCliente, setPagoCliente] = useState('')
   const [procesandoCobro, setProcesandoCobro] = useState(false);
@@ -750,18 +753,35 @@ function App() {
         <button onClick={() => setPantalla('corte')} style={{ padding: '10px 20px', backgroundColor: pantalla === 'corte' ? '#FF9800' : '#e0e0e0', color: pantalla === 'corte' ? 'white' : '#333', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}>📊 Corte de Caja</button>
       </div>
 
+      {/* 🔥 CAJA DE STOCK BAJO TIPO ACORDEÓN */}
       {cantidadStockBajo > 0 && (
-        <div style={{ backgroundColor: '#f8d7da', color: '#721c24', padding: '15px', borderRadius: '6px', marginBottom: '20px', border: '1px solid #f5c6cb', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>⚠️</span>
-          <div>
-            <strong>¡Notificación de Stock Bajo!</strong> Tienes {cantidadStockBajo} producto(s) por agotarse:{' '}
-            {productosPorAcabar.map((p, idx, arr) => (
-              <span key={p?.codigo || idx} style={{ fontWeight: 'bold', color: '#721c24' }}>
-                {p?.nombre || 'Sin nombre'} ({p?.stock !== undefined ? p.stock : 0} cant.){idx < arr.length - 1 ? ', ' : ''}
-              </span>
-            ))}
-            .
+        <div style={{ backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '6px', marginBottom: '20px', border: '1px solid #f5c6cb', overflow: 'hidden' }}>
+          {/* Cabecera Clickable con la flechita */}
+          <div 
+            onClick={() => setMostrarListaStock(!mostrarListaStock)} 
+            style={{ padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', backgroundColor: mostrarListaStock ? '#f5c6cb' : 'transparent', transition: 'background-color 0.2s' }}
+            title="Clic para ver/ocultar los productos"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '20px' }}>⚠️</span>
+              <strong>¡Notificación de Stock Bajo! Tienes {cantidadStockBajo} producto(s) por agotarse.</strong>
+            </div>
+            <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
+              {mostrarListaStock ? '▲' : '▼'}
+            </span>
           </div>
+          
+          {/* Lista oculta que se despliega */}
+          {mostrarListaStock && (
+            <div style={{ padding: '15px', borderTop: '1px solid #f5c6cb', fontSize: '15px', lineHeight: '1.5' }}>
+              {productosPorAcabar.map((p, idx, arr) => (
+                <span key={p?.codigo || idx} style={{ fontWeight: 'bold', color: '#721c24' }}>
+                  {p?.nombre || 'Sin nombre'} ({p?.stock !== undefined ? p.stock : 0} cant.){idx < arr.length - 1 ? ', ' : ''}
+                </span>
+              ))}
+              .
+            </div>
+          )}
         </div>
       )}
 
@@ -946,7 +966,6 @@ function App() {
               </div>
               <div><label>Nombre:</label><input id="input-nombre" type="text" value={nuevoProd.nombre} onChange={(e) => setNuevoProd({...nuevoProd, nombre: e.target.value})} required placeholder="Ej. Jitomate Saladet" style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#f8f9fa', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
               
-              {/* 🔥 NUEVA SECCIÓN DE CATEGORÍA AL REGISTRAR */}
               <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
                 <div style={{ flex: '1' }}>
                   <label>Categoría del Bloque:</label>
@@ -1059,7 +1078,6 @@ function App() {
                   </div>
                   <div style={{ flex: '1' }}><label>Contenido:</label><input type="text" value={productoEditando.contenido || ''} onChange={(e) => setProductoEditando({...productoEditando, contenido: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }} /></div>
                   
-                  {/* 🔥 SELECTOR DE CATEGORÍA EN EL MODO EDICIÓN */}
                   <div style={{ flex: '1' }}><label>Categoría:</label>
                     <select value={productoEditando.categoria || 'General'} onChange={(e) => setProductoEditando({...productoEditando, categoria: e.target.value})} style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#ffffff', color: '#1a1a1a', boxSizing: 'border-box' }}>
                       <option value="General">General</option>
@@ -1085,7 +1103,7 @@ function App() {
                 <th style={{ padding: '10px', color: '#333', textAlign: 'center', width: '30px' }}>#</th>
                 <th style={{ padding: '10px', color: '#333' }}>Código</th>
                 <th style={{ padding: '10px', color: '#333' }}>Nombre</th>
-                <th style={{ padding: '10px', color: '#333' }}>Categoría</th> {/* 🔥 NUEVA COLUMNA */}
+                <th style={{ padding: '10px', color: '#333' }}>Categoría</th>
                 <th style={{ padding: '10px', color: '#333' }}>Contenido</th>
                 <th style={{ padding: '10px', color: '#333' }}>P. Venta</th>
                 <th style={{ padding: '10px', color: '#333' }}>P. Costo</th>
@@ -1102,7 +1120,7 @@ function App() {
                   <td style={{ padding: '10px', textAlign: 'center', fontWeight: 'bold', color: '#555' }}>{index + 1}</td>
                   <td style={{ padding: '10px', color: '#1a1a1a' }}>{String(item?.codigo || '')}</td>
                   <td style={{ padding: '10px', fontWeight: 'bold', color: '#1a1a1a' }}>{String(item?.nombre || 'Sin nombre')}</td>
-                  <td style={{ padding: '10px', color: '#2196F3', fontWeight: 'bold' }}>{item.categoria || 'General'}</td> {/* 🔥 IMPRIME CATEGORÍA */}
+                  <td style={{ padding: '10px', color: '#2196F3', fontWeight: 'bold' }}>{item.categoria || 'General'}</td>
                   <td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>{formatoContenido(item)}</td>
                   <td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>${formatearDinero(item?.precio)}</td>
                   <td style={{ padding: '10px', color: '#1a1a1a', fontWeight: 'bold' }}>${formatearDinero(item?.precio_compra)}</td>
