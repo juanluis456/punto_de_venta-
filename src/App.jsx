@@ -198,7 +198,9 @@ function App() {
     setPagoCliente('');
     
     // 🔥 ACTUALIZA EL HISTORIAL SI ENTRAS A CORTE, TICKETS O SALIDAS
-    if (pantalla === 'corte' || pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
+   // ✅ ASÍ DEBE QUEDAR PARA QUE CADA PESTAÑA CARGUE LO SUYO:
+if (pantalla === 'corte') cargarCorteDeCaja();
+if (pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
 
     if (pantalla === 'ventas') {
       setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 150);
