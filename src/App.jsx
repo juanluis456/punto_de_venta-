@@ -58,7 +58,7 @@ function App() {
   const [modalLogout, setModalLogout] = useState(false);
 
   // 🔒 LLAVE MAESTRA DIRECTA (Sin variables de entorno)
-  const LLAVE_MAESTRA = "vazcam678";
+  const LLAVE_MAESTRA = "tienda1010";
   const [authModal, setAuthModal] = useState({ visible: false, accion: null, parametro: null, titulo: '' });
   const [passInput, setPassInput] = useState('');
 
