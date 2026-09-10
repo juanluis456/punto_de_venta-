@@ -51,6 +51,9 @@ function App() {
   const [datosCorte, setDatosCorte] = useState(null)
   const [historialVentas, setHistorialVentas] = useState([])
 
+  // 🔥 NUEVO: ESTADO PARA GUARDAR LA BASURA DE LA PAPELERA
+  const [listaPapelera, setListaPapelera] = useState([])
+
   const [modalDevolucion, setModalDevolucion] = useState(false);
   const [ticketSeleccionado, setTicketSeleccionado] = useState(null);
   const [cantidadesDevolucion, setCantidadesDevolucion] = useState([]);
@@ -153,6 +156,18 @@ function App() {
     } catch (error) { console.error("Error al cargar inventario", error); }
   }
 
+  // 🔥 NUEVO: FUNCIÓN PARA CARGAR LA PAPELERA
+  const cargarPapelera = async () => {
+    if (!idTienda) return;
+    try {
+      const respuesta = await fetch(`${API_BASE}/productos/eliminados`, { headers: { 'Tienda-ID': idTienda } });
+      if (respuesta.ok) {
+        const datos = await respuesta.json();
+        setListaPapelera(Array.isArray(datos) ? datos : []);
+      }
+    } catch (error) { console.error("Error al cargar la papelera", error); }
+  }
+
   const cargarCorteDeCaja = async () => {
     if (!idTienda) return;
     try {
@@ -198,9 +213,9 @@ function App() {
     setPagoCliente('');
     
     // 🔥 ACTUALIZA EL HISTORIAL SI ENTRAS A CORTE, TICKETS O SALIDAS
-   // ✅ ASÍ DEBE QUEDAR PARA QUE CADA PESTAÑA CARGUE LO SUYO:
-if (pantalla === 'corte') cargarCorteDeCaja();
-if (pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
+    if (pantalla === 'corte') cargarCorteDeCaja();
+    if (pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
+    if (pantalla === 'papelera') cargarPapelera(); // 🔥 NUEVO: CARGAR BASURA
 
     if (pantalla === 'ventas') {
       setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 150);
@@ -603,7 +618,7 @@ if (pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
   }
 
   const borrarProducto = async (codigoEliminar) => {
-    const confirmar = window.confirm(`⚠️ ¿Estás seguro de que deseas borrar permanentemente este producto del sistema?`);
+    const confirmar = window.confirm(`⚠️ ¿Estás seguro de que deseas mandar este producto a la papelera?`);
     if (confirmar) {
       try {
         const codigoSeguro = encodeURIComponent(codigoEliminar);
@@ -612,8 +627,43 @@ if (pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
         if (respuesta.ok) { 
           mostrarNotificacion(`🗑️ ${data.mensaje}`); 
           cargarInventario(); 
+          cargarPapelera(); // 🔥 Actualizamos la papelera
         } else {
           mostrarNotificacion(`❌ ${data.error || "No se pudo borrar"}`, "error");
+        }
+      } catch (error) { mostrarNotificacion("Error con el servidor", "error"); }
+    }
+  }
+
+  // 🔥 NUEVO: FUNCIÓN PARA RESTAURAR PRODUCTOS DE LA PAPELERA
+  const restaurarProducto = async (codigoRestaurar) => {
+    try {
+      const codigoSeguro = encodeURIComponent(codigoRestaurar);
+      const respuesta = await fetch(`${API_BASE}/productos/restaurar/${codigoSeguro}`, { method: 'PUT', headers: { 'Tienda-ID': idTienda } });
+      const data = await respuesta.json();
+      if (respuesta.ok) {
+        mostrarNotificacion(`♻️ ${data.mensaje}`);
+        cargarPapelera();
+        cargarInventario();
+      } else {
+        mostrarNotificacion(`❌ ${data.error}`, "error");
+      }
+    } catch (error) { mostrarNotificacion("Error con el servidor", "error"); }
+  }
+
+  // 🔥 NUEVO: FUNCIÓN PARA DESTRUIR DEFINITIVAMENTE DE LA PAPELERA
+  const destruirProductoDefinitivo = async (codigoDestruir) => {
+    const confirmar = window.confirm(`🔥 ¡ALERTA ROJA! Estás a punto de borrar este producto PARA SIEMPRE. Esta acción NO se puede deshacer. ¿Deseas destruirlo?`);
+    if (confirmar) {
+      try {
+        const codigoSeguro = encodeURIComponent(codigoDestruir);
+        const respuesta = await fetch(`${API_BASE}/productos/destruir/${codigoSeguro}`, { method: 'DELETE', headers: { 'Tienda-ID': idTienda } });
+        const data = await respuesta.json();
+        if (respuesta.ok) {
+          mostrarNotificacion(`🔥 ${data.mensaje}`);
+          cargarPapelera();
+        } else {
+          mostrarNotificacion(`❌ ${data.error}`, "error");
         }
       } catch (error) { mostrarNotificacion("Error con el servidor", "error"); }
     }
@@ -809,6 +859,9 @@ if (pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
         
         {/* 🔥 AQUÍ ESTÁ EL BOTÓN DE SALIDAS PEGADITO A CORTE DE CAJA */}
         <button onClick={() => setPantalla('salidas')} style={{ padding: '10px 20px', backgroundColor: pantalla === 'salidas' ? '#2e7d32' : '#e0e0e0', color: pantalla === 'salidas' ? 'white' : '#333', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}>📤 Salidas</button>
+
+        {/* 🔥 NUEVO BOTÓN PARA VER LA PAPELERA */}
+        <button onClick={() => setPantalla('papelera')} style={{ padding: '10px 20px', backgroundColor: pantalla === 'papelera' ? '#212121' : '#e0e0e0', color: pantalla === 'papelera' ? 'white' : '#333', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', marginLeft: 'auto' }}>🗑️ Papelera</button>
       </div>
 
       {/* CAJA DE STOCK BAJO TIPO ACORDEÓN */}
@@ -841,7 +894,52 @@ if (pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
         </div>
       )}
 
-      {/* 🔥 NUEVA PANTALLA: SALIDAS DEL DÍA */}
+      {/* 🔥 NUEVA PANTALLA: PAPELERA DE RECICLAJE */}
+      {pantalla === 'papelera' && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
+            <span style={{ fontSize: '32px' }}>🗑️</span>
+            <h2 style={{ color: '#212121', margin: '0' }}>Papelera de Reciclaje</h2>
+          </div>
+          <p style={{ color: '#555', fontSize: '16px', marginBottom: '20px' }}>Aquí están los productos que borraste por error. Puedes restaurarlos o destruirlos para siempre.</p>
+          
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden' }}>
+            <table border="0" style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+              <thead style={{ backgroundColor: '#eeeeee' }}>
+                <tr>
+                  <th style={{ padding: '15px', color: '#424242', borderBottom: '2px solid #bdbdbd' }}>Img</th>
+                  <th style={{ padding: '15px', color: '#424242', borderBottom: '2px solid #bdbdbd' }}>Código</th>
+                  <th style={{ padding: '15px', color: '#424242', borderBottom: '2px solid #bdbdbd' }}>Nombre del Producto</th>
+                  <th style={{ padding: '15px', color: '#424242', borderBottom: '2px solid #bdbdbd' }}>Categoría</th>
+                  <th style={{ padding: '15px', color: '#424242', borderBottom: '2px solid #bdbdbd', textAlign: 'center' }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {listaPapelera.length > 0 ? (
+                  listaPapelera.map((item, index) => (
+                    <tr key={index} style={{ borderBottom: '1px solid #eee', backgroundColor: index % 2 === 0 ? '#ffffff' : '#fafafa' }}>
+                      <td style={{ padding: '15px', textAlign: 'center' }}>
+                        {item.imagen ? <img src={item.imagen} alt="img" style={{ width: '35px', height: '35px', borderRadius: '4px', objectFit: 'cover', opacity: 0.5 }} /> : <span style={{ fontSize: '20px', opacity: 0.5 }}>📦</span>}
+                      </td>
+                      <td style={{ padding: '15px', color: '#9e9e9e', textDecoration: 'line-through' }}>{String(item?.codigo || '')}</td>
+                      <td style={{ padding: '15px', fontWeight: 'bold', color: '#d32f2f' }}>{String(item?.nombre || 'Sin nombre')}</td>
+                      <td style={{ padding: '15px', color: '#757575' }}>{item.categoria || 'Sin Asignar'}</td>
+                      <td style={{ padding: '15px', textAlign: 'center', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <button onClick={() => restaurarProducto(item.codigo)} style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>♻️ Restaurar</button>
+                        <button onClick={() => destruirProductoDefinitivo(item.codigo)} style={{ backgroundColor: '#212121', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>🔥 Destruir</button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr><td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: '#666', fontSize: '18px', fontWeight: 'bold' }}>La papelera está vacía. ¡Todo limpio! ✨</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* PANTALLA: SALIDAS DEL DÍA */}
       {pantalla === 'salidas' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
