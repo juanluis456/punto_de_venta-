@@ -655,6 +655,48 @@ if (pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
     } catch (error) { console.error("Error al crear el PDF de faltantes:", error); }
   }
 
+  // 🔥 NUEVA FUNCIÓN: DESCARGAR LISTA DE PRODUCTOS DEL ALMACÉN EN PDF
+  const generarPDFAlmacen = () => {
+    try {
+      if (productosFiltrados.length === 0) { 
+        mostrarNotificacion("⚠️ No hay productos para descargar.", "error"); 
+        return; 
+      }
+      const doc = new jsPDF();
+      doc.setFontSize(18); doc.setFont("helvetica", "bold"); 
+      doc.text(`LISTA DE PRODUCTOS - ${nombreTienda.toUpperCase()}`, 14, 20); 
+      doc.setFontSize(11); doc.setFont("helvetica", "normal");
+      const fechaHoy = new Date().toLocaleDateString();
+      doc.text(`Fecha: ${fechaHoy} | Bloque: ${filtroCategoria}`, 14, 28);
+
+      const columnas = ["Código", "Nombre", "Categoría", "Cont.", "P. Venta", "P. Costo", "Stock"];
+      const filas = productosFiltrados.map(p => [
+        String(p?.codigo || ''),
+        String(p?.nombre || 'Sin nombre'),
+        String(p?.categoria || 'Sin Asignar'),
+        formatoContenido(p),
+        `$${formatearDinero(p?.precio)}`,
+        `$${formatearDinero(p?.precio_compra)}`,
+        `${p?.stock !== undefined ? float(p.stock) : 0}`
+      ]);
+
+      autoTable(doc, { 
+        startY: 35, 
+        head: [columnas], 
+        body: filas, 
+        headStyles: { fillColor: [33, 150, 243] }, // Azul
+        styles: { fontSize: 9 } 
+      });
+
+      const nombreArchivoSeguro = nombreTienda.replace(/\s+/g, '_').toUpperCase();
+      doc.save(`Almacen_${nombreArchivoSeguro}_${filtroCategoria}.pdf`);
+      mostrarNotificacion("📄 PDF descargado con éxito.");
+    } catch (error) { 
+      console.error("Error al crear el PDF:", error); 
+      mostrarNotificacion("❌ Error al generar el PDF.", "error");
+    }
+  }
+
   // 🔥 FUNCIÓN NUEVA: RECOGE TODAS LAS VENTAS Y SUMA LOS ARTÍCULOS QUE HAN SALIDO
   const obtenerResumenSalidas = () => {
     const resumen = {};
@@ -1105,6 +1147,11 @@ if (pantalla === 'tickets' || pantalla === 'salidas') cargarHistorialVentas();
             <span style={{ backgroundColor: '#4CAF50', color: 'white', padding: '5px 15px', borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
               📦 Total Registrados: {listaInventario.length}
             </span>
+            
+            {/* 🔥 AQUÍ ESTÁ EL BOTÓN DE DESCARGAR PDF PEGADO A LA DERECHA */}
+            <button onClick={generarPDFAlmacen} style={{ backgroundColor: '#d32f2f', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', boxShadow: '0 2px 4px rgba(211,47,47,0.3)' }}>
+              <span>📄</span> Descargar Lista de Productos
+            </button>
           </div>
 
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
